@@ -10,7 +10,6 @@ square root of the number of input neurons.
 """
 
 # Standard library
-import imp
 import json
 import sys
 
@@ -41,14 +40,14 @@ def run_network(filename):
     net = network2.Network([784, 30, 10], cost=network2.CrossEntropyCost())
     print "Train the network using the default starting weights."
     default_vc, default_va, default_tc, default_ta \
-        = net.SGD(training_data[:500], 100, 10, 0.01,
-                  evaluation_data=validation_data, lmbda = 0.002,
+        = net.SGD(training_data, 30, 10, 0.01,
+                  evaluation_data=validation_data, lmbda = 0.001,
                   monitor_evaluation_accuracy=True)
     print "Train the network using the large starting weights."
     net.large_weight_initializer()
     large_vc, large_va, large_tc, large_ta \
         = net.SGD(training_data, 30, 10, 0.01,
-                  evaluation_data=validation_data, lmbda = 0.002,
+                  evaluation_data=validation_data, lmbda = 0.001,
                   monitor_evaluation_accuracy=True)
     f = open(filename, "w")
     json.dump({"default_weight_initialization":

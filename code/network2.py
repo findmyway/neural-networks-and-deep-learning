@@ -1,8 +1,8 @@
-"""network2
-~~~~~~~~~~~
+"""network2.py
+~~~~~~~~~~~~~~
 
-An improved version of network1, implementing the stochastic gradient
-descent learning algorithm for a feedforward neural network.
+An improved version of network.py, implementing the stochastic
+gradient descent learning algorithm for a feedforward neural network.
 Improvements include the addition of the cross-entropy cost function,
 regularization, and better initialization of network weights.  Note
 that I have focused on making the code simple, easily readable, and
@@ -13,13 +13,14 @@ features.
 
 #### Libraries
 # Standard library
+import json
 import random
 
 # Third-party libraries
 import numpy as np
 
 
-#### Define the quadratic and cross-entropy cost functions.  
+#### Define the quadratic and cross-entropy cost functions
 
 class QuadraticCost:
 
@@ -27,12 +28,13 @@ class QuadraticCost:
     def fn(a, y):
         """Return the cost associated with an output ``a`` and desired output
         ``y``.
+
         """
         return 0.5*np.linalg.norm(a-y)**2
 
     @staticmethod
-    def delta(cls, z, a, y):
-        "Return the error delta from the output layer."
+    def delta(z, a, y):
+        """Return the error delta from the output layer."""
         return (a-y) * sigmoid_prime_vec(z)
 
 
@@ -42,15 +44,17 @@ class CrossEntropyCost:
     def fn(a, y):
         """Return the cost associated with an output ``a`` and desired output
         ``y``.
+
         """
         return np.sum(-y*np.log(a)-(1-y)*np.log(1-a))
 
     @staticmethod
     def delta(z, a, y):
         """Return the error delta from the output layer.  Note that the
-        variable z is not used in the function.  It is included in the
-        function's parameters in order to make the parameters consistent
-        with the delta function for other cost functions.
+        parameter ``z`` is not used by the method.  It is included in
+        the method's parameters in order to make the interface
+        consistent with the delta method for other cost classes.
+
         """
         return (a-y)
 
@@ -58,7 +62,7 @@ class CrossEntropyCost:
 #### Main Network class
 class Network():
 
-    def __init__(self, sizes, cost=CrossEntropyCost()):
+    def __init__(self, sizes, cost=CrossEntropyCost):
         """The list ``sizes`` contains the number of neurons in the respective
         layers of the network.  For example, if the list was [2, 3, 1]
         then it would be a three-layer network, with the first layer
@@ -75,10 +79,10 @@ class Network():
         self.cost=cost
 
     def default_weight_initializer(self):
-        """Initialize the weights using a Gaussian distribution with mean 0
-        and standard deviation 1 divided by the square root of the
-        number of neurons input to the weight layer.  Initialize the
-        biases using a Gaussian distribution with mean 0 and standard
+        """Initialize each weight using a Gaussian distribution with mean 0
+        and standard deviation 1 over the square root of the number of
+        weights connecting to the same neuron.  Initialize the biases
+        using a Gaussian distribution with mean 0 and standard
         deviation 1.
 
         Note that the first layer is assumed to be an input layer, and
@@ -112,15 +116,18 @@ class Network():
                         for x, y in zip(self.sizes[:-1], self.sizes[1:])]
 
     def feedforward(self, a):
-        "Return the output of the network if ``a`` is input."
+        """Return the output of the network if ``a`` is input."""
         for b, w in zip(self.biases, self.weights):
             a = sigmoid_vec(np.dot(w, a)+b)
         return a
 
-    def SGD(self, training_data, epochs, mini_batch_size, eta, lmbda = 0.0, 
-            evaluation_data=None, monitor_evaluation_cost=False,
+    def SGD(self, training_data, epochs, mini_batch_size, eta, 
+            lmbda = 0.0, 
+            evaluation_data=None, 
+            monitor_evaluation_cost=False,
             monitor_evaluation_accuracy=False,
-            monitor_training_cost=False, monitor_training_accuracy=False):
+            monitor_training_cost=False, 
+            monitor_training_accuracy=False):
         """Train the neural network using mini-batch stochastic gradient
         descent.  The ``training_data`` is a list of tuples ``(x, y)``
         representing the training inputs and the desired outputs.  The
@@ -130,11 +137,14 @@ class Network():
         data.  We can monitor the cost and accuracy on either the
         evaluation data or the training data, by setting the
         appropriate flags.  The method returns a tuple containing four
-        lists: the costs on the evaluation data, the accuracies on the
-        evaluation data, the costs on the training data, and the
-        accuracies on the training data.  All values are evaluated at
-        the end of each training epoch.  Note that the lists are empty
-        if the corresponding flag is not set.
+        lists: the (per-epoch) costs on the evaluation data, the
+        accuracies on the evaluation data, the costs on the training
+        data, and the accuracies on the training data.  All values are
+        evaluated at the end of each training epoch.  So, for example,
+        if we train for 30 epochs, then the first element of the tuple
+        will be a 30-element list containing the cost on the
+        evaluation data at the end of each epoch. Note that the lists
+        are empty if the corresponding flag is not set.
 
         """
         if evaluation_data: n_data = len(evaluation_data)
@@ -176,6 +186,7 @@ class Network():
         descent using backpropagation to a single mini batch.  The
         ``mini_batch`` is a list of tuples ``(x, y)``, ``eta`` is the
         learning rate, and ``lmbda`` is the regularization parameter.
+
         """
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
@@ -183,8 +194,8 @@ class Network():
             delta_nabla_b, delta_nabla_w = self.backprop(x, y)
             nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
             nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
-        self.weights = [(1-eta*lmbda)*w-eta*nw for w, nw in
-                        zip(self.weights, nabla_w)]
+        self.weights = [(1-eta*lmbda)*w-eta*nw 
+                        for w, nw in zip(self.weights, nabla_w)]
         self.biases = [b-eta*nb for b, nb in zip(self.biases, nabla_b)]
 
     def backprop(self, x, y):
@@ -229,9 +240,16 @@ class Network():
         should be set to False if the data set is validation or test
         data (the usual case), and to True if the data set is the
         training data. The need for this flag arises due to
-        differences in the way the results ``y`` are represented ---
-        it flags whether we need to convert between the different
-        representations.
+        differences in the way the results ``y`` are represented in
+        the different data sets.  In particular, it flags whether we
+        need to convert between the different representations.  It may
+        seem strange to use different representations for the
+        different data sets.  Why not use the same representation for
+        all three data sets?  It's done for efficiency reasons -- our
+        program usually uses the training data somewhat differently to
+        the other data sets, and using different representations
+        speeds things up.  More details on the representations can be
+        found in mnist_loader.load_data_wrapper.
 
         """
         if convert:
@@ -250,20 +268,46 @@ class Network():
         reversed) convention for the ``accuracy`` method, above.
 
         """
-        cost = 0
+        cost = 0.0
         for x, y in data:
             a = self.feedforward(x)
             if convert: y = vectorized_result(y)
             cost += self.cost.fn(a, y)
         cost += 0.5*lmbda*sum(np.linalg.norm(w)**2 for w in self.weights)
         return cost
-        
+
+    def save(self, filename):
+        """Save the neural network to the file ``filename``."""
+        data = {"sizes": self.sizes,
+                "weights": [w.tolist() for w in self.weights],
+                "biases": [b.tolist() for b in self.biases],
+                "cost": str(self.cost.__name__)}
+        f = open(filename, "w")
+        json.dump(data, f)
+        f.close()
+
+#### Loading a Network
+def load(filename):
+    """Load a neural network from the file ``filename``.  Returns an
+    instance of Network.
+
+    """
+    f = open(filename, "r")
+    data = json.load(f)
+    f.close()
+    cost = getattr(sys.modules[__name__], data["cost"])
+    net = Network(data["sizes"], cost=cost)
+    net.weights = [np.array(w) for w in data["weights"]]
+    net.biases = [np.array(b) for b in data["biases"]]
+    return net
+
 #### Miscellaneous functions
 def vectorized_result(j):
-    """Return a 10-dimensional unit vector with a 1.0 in the jth
-    position and zeroes elsewhere.  This is used to convert a digit
-    (0...9) into a corresponding desired output from the neural
-    network."""
+    """Return a 10-dimensional unit vector with a 1.0 in the j'th position
+    and zeroes elsewhere.  This is used to convert a digit (0...9)
+    into a corresponding desired output from the neural network.
+
+    """
     e = np.zeros((10, 1))
     e[j] = 1.0
     return e
